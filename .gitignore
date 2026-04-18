@@ -1,0 +1,12 @@
+# Ignorar arquivos de ambiente (senhas)
+.env
+.env.local
+
+# Ignorar o ambiente virtual e caches do Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Ignorar arquivos do próprio sistema operacional
+.DS_Store

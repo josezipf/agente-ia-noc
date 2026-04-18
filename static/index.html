@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <!-- Configurações básicas de codificação e responsividade da página -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOC AI Agent - AIOps Dashboard</title>
+
+    <!-- Importa as fontes modernas "Inter" diretamente do Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Importa ícones vetoriais (Lupa, Robô, Humano) da biblioteca Font Awesome (CDN) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Conecta este arquivo HTML ao nosso arquivo de estilo CSS local -->
+    <link rel="stylesheet" href="/static/style.css">
+
+    <!-- Importa o Marked.js (Ferramenta que converte Markdown em texto bonito, ex: **negrito** e Tabelas) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+
+<body>
+    <!-- app-container: A caixa gigante invisível que guarda a tela inteira -->
+    <div class="app-container">
+
+        <!-- ==================== MENU LATERAL (SIDEBAR) ==================== -->
+        <!-- aside = usado semanticamente para barras laterais -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo">
+                    <i class="fa-solid fa-network-wired"></i>
+                </div>
+                <h2>NOTO TI</h2>
+            </div>
+
+            <div class="nav-menu">
+                <!-- Links de navegação (apenas visuais para o layout ficar profissional) -->
+                <a href="#" class="nav-item active">
+                    <i class="fa-solid fa-message"></i>
+                    <span>Console NOC</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fa-solid fa-server"></i>
+                    <span>Servidores</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Métricas</span>
+                </a>
+            </div>
+
+            <div class="sidebar-footer">
+                <!-- Caixa de status visualizando se o sistema está online -->
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span>Sistema Online</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ==================== ÁREA PRINCIPAL (ONDE FICA O CHAT) ==================== -->
+        <main class="main-content">
+
+            <!-- Cabeçalho (Header) do Chat -->
+            <header class="top-header">
+                <!-- Botão de "Hambúrguer", visível apenas em telas pequenas (Celulares) -->
+                <button id="mobile-menu-btn" class="mobile-menu-btn">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div class="header-title">
+                    <h1>AIOps Agent Console</h1>
+                    <p>Assistente Especialista Zabbix & NOC</p>
+                </div>
+            </header>
+
+            <!-- A Caixa central onde ocorre as mensagens -->
+            <div class="chat-container">
+
+                <!-- ONDE AS MENSAGENS SERÃO INJETADAS PELO JAVASCRIPT -->
+                <div class="chat-messages" id="chat-messages">
+                    <!-- Primeira mensagem (Boas-vindas) já escrita fixa no HTML -->
+                    <div class="message agent-message">
+                        <div class="message-avatar">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <div class="message-content">
+                            <p>Olá! Sou seu Assistente NOC alimentado pelo Llama-3. Como posso ajudar com a sua
+                                infraestrutura ou provisionamento no Zabbix hoje?</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== CAMPO DE DIGITAÇÃO DE USUÁRIO ==================== -->
+                <div class="chat-input-container">
+                    <form id="chat-form" class="chat-form">
+                        <!-- textarea ao invés de input: permite textos em múltiplas linhas -->
+                        <textarea id="message-input" placeholder="Digite seu comando ou pergunta..."
+                            rows="1"></textarea>
+
+                        <!-- Botão de "Enviar" mensagem -->
+                        <button type="submit" id="send-button" class="send-btn" title="Enviar">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Finalmente, chame o JavaScript que vai animar essa tela e fazer as lógicas rodarem -->
+    <script src="/static/script.js"></script>
+</body>
+
+</html>
