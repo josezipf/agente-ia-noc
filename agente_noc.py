@@ -63,66 +63,72 @@ def iniciar_chat_cli():
             print(f"\n[Agente]\n{resposta.content}")
             
             # 3. O CONTROLLER ENTRA EM AÇÃO
-            # Blindagem contra NoneType: Se a IA bugar e devolver nulo, usamos uma lista vazia
-            tools_chamadas = resposta.tools if hasattr(resposta, 'tools') and resposta.tools is not None else []
-            
-            for tool in tools_chamadas:
-                try:
-                    resultado_tool = json.loads(tool.result)
-                    
-                    # Se for erro de IP inválido ou host existente, ignoramos e deixamos a IA falar
-                    if resultado_tool.get("status") == "error":
-                        continue
-                    
-                    # ROTEAMENTO: Analisa se a ação é de criar host no Zabbix
-                    if resultado_tool.get("action") == "create_host" and resultado_tool.get("target_system") == "zabbix":
-                        dados_host = resultado_tool["data"]
+            # O sistema Agno oculta a tool na resposta final. Temos que caçar no histórico recente as tools acionadas.
+            if hasattr(resposta, 'messages') and isinstance(resposta.messages, list):
+                for msg in reversed(resposta.messages):
+                    if getattr(msg, "role", "") == "user":
+                        break # Chegamos na pergunta principal do usuário, paramos a busca p/ não pegar resíduo antigo
                         
-                        # Rastreabilidade: Geramos um ID único para essa operação
-                        correlation_id = str(uuid.uuid4())
-                        
-                        # LOG de Intenção
-                        logging.info(json.dumps({
-                            "correlation_id": correlation_id,
-                            "event": "host_creation_requested",
-                            "host": dados_host["nome_host"],
-                            "ip": dados_host["ip"],
-                            "operator": "cli_user"
-                        }))
-                        
-                        # INTERAÇÃO HUMANA (Segurança Crítica)
-                        print("\n" + "="*50)
-                        print(f"[CONTROLLER] ⚠️ AÇÃO CRÍTICA INTERCEPTADA (Ticket: {correlation_id[:8]})")
-                        print(f"Confirmar criação do host: {dados_host['nome_host']} ({dados_host['ip']})?")
-                        confirm = input("Digite 's' para aprovar ou 'n' para rejeitar ❯ ")
-                        print("="*50)
-                        
-                        if confirm.lower() == 's':
-                            print("\n[CONTROLLER] Executando provisionamento...")
+                    if getattr(msg, "role", "") == "tool" and getattr(msg, "content", ""):
+                        try:
+                            # Converte o conteúdo bruto para verificar se é o JSON das nossas tools
+                            resultado_str = str(msg.content)
+                            if not resultado_str.strip().startswith("{"):
+                                continue
+
+                            resultado_tool = json.loads(resultado_str)
                             
-                            # Executa a ação real na infraestrutura
-                            resultado_exec = executar_criacao_real(dados_host)
-                            print(f"[CONTROLLER] {resultado_exec['message']}")
+                            # Se for erro de IP inválido ou host existente ignoramos
+                            if resultado_tool.get("status") == "error":
+                                continue
                             
-                            # LOG de Resultado Final
-                            logging.info(json.dumps({
-                                "correlation_id": correlation_id,
-                                "event": "host_creation_executed",
-                                "host": dados_host["nome_host"],
-                                "status": resultado_exec["status"]
-                            }))
-                        else:
-                            print("\n[CONTROLLER] Ação abortada pelo operador.")
-                            # LOG de Aborto
-                            logging.info(json.dumps({
-                                "correlation_id": correlation_id,
-                                "event": "host_creation_aborted",
-                                "host": dados_host["nome_host"]
-                            }))
-                            
-                except json.JSONDecodeError:
-                    # Ignora se a tool não retornou um JSON válido
-                    pass
+                            # ROTEAMENTO: Analisa se a ação é de criar host no Zabbix
+                            if resultado_tool.get("status") == "pending" and resultado_tool.get("action") == "create_host":
+                                dados_host = resultado_tool["data"]
+                                
+                                # Rastreabilidade: Geramos um ID único para essa operação
+                                correlation_id = str(uuid.uuid4())
+                                
+                                # LOG de Intenção
+                                logging.info(json.dumps({
+                                    "correlation_id": correlation_id,
+                                    "event": "host_creation_requested",
+                                    "host": dados_host["nome_host"],
+                                    "ip": dados_host["ip"],
+                                    "operator": "cli_user"
+                                }))
+                                
+                                # INTERAÇÃO HUMANA (Segurança Crítica)
+                                print("\n" + "="*50)
+                                print(f"[CONTROLLER] ⚠️ AÇÃO CRÍTICA INTERCEPTADA (Ticket: {correlation_id[:8]})")
+                                print(f"Confirmar criação do host: {dados_host['nome_host']} ({dados_host['ip']})?")
+                                confirm = input("Digite 's' para aprovar ou 'n' para rejeitar ❯ ")
+                                print("="*50)
+                                
+                                if confirm.lower() == 's':
+                                    print("\n[CONTROLLER] Executando provisionamento...")
+                                    
+                                    # Executa a ação real na infraestrutura
+                                    resultado_exec = executar_criacao_real(dados_host)
+                                    print(f"[CONTROLLER] {resultado_exec['message']}")
+                                    
+                                    # LOG de Resultado Final
+                                    logging.info(json.dumps({
+                                        "correlation_id": correlation_id,
+                                        "event": "host_creation_executed",
+                                        "host": dados_host["nome_host"],
+                                        "status": resultado_exec["status"]
+                                    }))
+                                else:
+                                    print("\n[CONTROLLER] Ação abortada pelo operador.")
+                                    # LOG de Aborto
+                                    logging.info(json.dumps({
+                                        "correlation_id": correlation_id,
+                                        "event": "host_creation_aborted",
+                                        "host": dados_host["nome_host"]
+                                    }))
+                        except Exception as json_err:
+                            pass
 
         except (KeyboardInterrupt, EOFError):
             print("\n\n[Agente] Operação interrompida pelo usuário.")

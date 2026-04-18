@@ -93,47 +93,53 @@ async def chat_endpoint(request: ChatRequest):
             texto_resposta = str(resposta) if str(resposta) else "Erro: A Inteligência gerou uma resposta nula/vazia após a falha da ferramenta."        
         # PARTE DO CONTROLLER (SEGURANÇA):
         # A inteligência tentou chamar ferramentas por trás dos panos?
-        tools_chamadas = resposta.tools if hasattr(resposta, 'tools') and resposta.tools is not None else []
-        
         confirmations_needed = [] # Lista das aprovações que vamos cobrar do usuário visualmente!
         
-        # Para cada ferramenta que a IA queria executar...
-        for tool in tools_chamadas:
-            try:
-                # Tenta transformar o resultado que a ferramenta gerou em um dicionário (JSON)
-                resultado_tool = json.loads(tool.result) if hasattr(tool, 'result') and tool.result else {}
+        if hasattr(resposta, 'messages') and isinstance(resposta.messages, list):
+            # Lemos de trás pra frente para achar o que aconteceu nessa exata interação
+            for msg in reversed(resposta.messages):
+                if getattr(msg, "role", "") == "user":
+                    break # Fim da busca (chegamos no prompt que o cara enviou agora)
                 
-                # Se for erro, apenas ignoramos para que a IA fale do erro ela mesma ("IP inválido", etc)
-                if resultado_tool.get("status") == "error":
-                    continue
-                
-                # SE a IA chamou a ferramenta e ela devolveu que a ação real precisa ser aprovada (create_host do Zabbix)...
-                if resultado_tool.get("action") == "create_host" and resultado_tool.get("target_system") == "zabbix":
-                    dados_host = resultado_tool["data"]
-                    
-                    # RASTREABILIDADE - Geramos um protocolo único aleatório de 32 letras para LOG e Botão Confirmar
-                    correlation_id = str(uuid.uuid4())
-                    
-                    # LOG DE AUDITORIA: "O usuário X tentou criar um Host Y"
-                    logging.info(json.dumps({
-                        "correlation_id": correlation_id,
-                        "event": "host_creation_requested_web",
-                        "host": dados_host["nome_host"],
-                        "ip": dados_host["ip"],
-                        "operator": "web_user"
-                    }))
-                    
-                    # Nós então preenchemos o aviso que aparecerá APÓS a fala da IA, pedindo pra ela apertar o botão Aprovar.
-                    confirmations_needed.append({
-                        "correlation_id": correlation_id,
-                        "action": "create_host",
-                        "data": dados_host,
-                        "message": f"Confirmar criação do host: {dados_host['nome_host']} ({dados_host['ip']})?"
-                    })
-                    
-            except Exception as ex:
-                logging.error(f"Erro ao parsear chamada de tool: {ex}")
-                pass
+                if getattr(msg, "role", "") == "tool" and getattr(msg, "content", ""):
+                    try:
+                        # Tenta transformar o resultado bruto que a ferramenta gerou em um dicionário (JSON)
+                        content_str = str(msg.content)
+                        if not content_str.strip().startswith("{"):
+                            continue
+                            
+                        resultado_tool = json.loads(content_str)
+                        
+                        # Se for erro, apenas ignoramos para que a IA fale do erro ela mesma ("IP inválido", etc)
+                        if resultado_tool.get("status") == "error":
+                            continue
+                        
+                        # SE a IA chamou a ferramenta e ela devolveu que a ação real precisa ser aprovada...
+                        if resultado_tool.get("status") == "pending" and resultado_tool.get("action") == "create_host" and resultado_tool.get("target_system") == "zabbix":
+                            dados_host = resultado_tool["data"]
+                            
+                            # RASTREABILIDADE - Geramos um protocolo logico aleatório de 32 letras para LOG e Botão
+                            correlation_id = str(uuid.uuid4())
+                            
+                            # LOG DE AUDITORIA
+                            logging.info(json.dumps({
+                                "correlation_id": correlation_id,
+                                "event": "host_creation_requested_web",
+                                "host": dados_host["nome_host"],
+                                "ip": dados_host["ip"],
+                                "operator": "web_user"
+                            }))
+                            
+                            # Nós então preenchemos o aviso que aparecerá APÓS a fala da IA!
+                            confirmations_needed.append({
+                                "correlation_id": correlation_id,
+                                "action": "create_host",
+                                "data": dados_host,
+                                "message": f"Confirmar criação do host: {dados_host['nome_host']} ({dados_host['ip']})?"
+                            })
+                    except Exception as ex:
+                        logging.error(f"Erro ao parsear chamada de tool na web: {ex}")
+                        pass
                 
         # Empacota a (Resposta Falada + Botões de Confirmação Pendentes) e Devolve para o Javascript!
         return JSONResponse(content={
