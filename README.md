@@ -38,7 +38,7 @@ source .venv/bin/activate  # Se estiver no Windows: .venv\Scripts\activate
 ### 3. Instalando as Dependências
 O projeto utiliza algumas das bibliotecas de IA e backend mais modernas:
 ```bash
-pip install fastapi uvicorn pydantic agno python-dotenv
+pip install fastapi uvicorn pydantic agno groq python-dotenv pyzabbix requests
 ```
 
 ### 4. Configurando as Senhas de Acesso (Crucial!)
