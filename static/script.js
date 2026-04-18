@@ -103,6 +103,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // 6. Coloca o balão de resposta verde com texto que Groq Llama enviou (E ativa marcação Negrito Markdown)
             if (data.response) {
                 appendMessage('agent', data.response, true);
+            } else if (!data.confirmations || data.confirmations.length === 0) {
+                appendMessage('agent', 'Houve uma falha de ferramenta interna sem retorno de texto pela IA.');
             }
 
             // 7. SURPRESA NO ZABBIX: Alguma ferramenta crítica interceptou! O Backend Python nos alertou

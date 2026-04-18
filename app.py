@@ -78,9 +78,19 @@ async def chat_endpoint(request: ChatRequest):
         # .run(pergunta) envia e aguarda ela responder (usando a Groq e o LLama 3)
         resposta = agente_noc.run(pergunta)
         
-        # Pega a "fala" escrita da resposta. Se bugar, transforma pra string simples.
-        texto_resposta = resposta.content if hasattr(resposta, "content") else str(resposta)
-        
+        # Pega a "fala" escrita da resposta com redundância para casos de erro do Agno
+        texto_resposta = ""
+        if hasattr(resposta, "content") and resposta.content:
+            texto_resposta = str(resposta.content)
+        elif hasattr(resposta, "messages"):
+            # Se deu erro, às vezes o texto fica preso na lista de mensagens da sessão
+            for msg in reversed(resposta.messages):
+                if getattr(msg, "role", "") == "assistant" and getattr(msg, "content", ""):
+                    texto_resposta = str(msg.content)
+                    break
+
+        if not texto_resposta:
+            texto_resposta = str(resposta) if str(resposta) else "Erro: A Inteligência gerou uma resposta nula/vazia após a falha da ferramenta."        
         # PARTE DO CONTROLLER (SEGURANÇA):
         # A inteligência tentou chamar ferramentas por trás dos panos?
         tools_chamadas = resposta.tools if hasattr(resposta, 'tools') and resposta.tools is not None else []
