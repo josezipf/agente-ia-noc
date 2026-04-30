@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 
 from agno.agent import Agent
 from agno.models.groq import Groq
-from agno.db.in_memory import InMemoryDb
 
 # Importamos do nosso arquivo de ferramentas
 from zabbix_tools import preparar_cadastro_host, executar_criacao_real
@@ -39,8 +38,6 @@ agente_noc = Agent(
     description="Especialista em NOC",
     instructions=instrucoes,
     tools=[preparar_cadastro_host], 
-    db=InMemoryDb(),
-    add_history_to_context=True,
     debug_mode=True,       
     markdown=True          
 )
