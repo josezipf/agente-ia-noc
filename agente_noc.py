@@ -43,6 +43,7 @@ def get_agente_noc(session_id=None):
         db=SqliteDb(session_table="agent_sessions", db_file="agente_noc_memoria.db"),
         session_id=session_id,
         add_history_to_context=True,
+        num_history_runs=20,     # <--- Aumenta o limite padrão de 3 para 20 interações
         debug_mode=True,       
         markdown=True          
     )
