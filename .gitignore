@@ -9,4 +9,8 @@ __pycache__/
 *.pyc
 
 # Ignorar arquivos do próprio sistema operacional
-.DS_Store\n# Bancos de dados\n*.db\n*.sqlite
+.DS_Store
+
+# Bancos de dados
+*.db
+*.sqlite
