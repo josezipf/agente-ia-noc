@@ -183,4 +183,4 @@ async def confirm_action(request: ConfirmRequest):
 if __name__ == "__main__":
     import uvicorn
     # reload=True ajuda quando você altera o arquivo Py, ele atualiza automaticamente
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=5000, reload=True)
