@@ -41,6 +41,7 @@ agente_noc = Agent(
     tools=[preparar_cadastro_host], 
     db=SqliteDb(session_table="agent_sessions", db_file="agente_noc_memoria.db"),
     add_history_to_context=True,
+    read_chat_history=True,
     debug_mode=True,       
     markdown=True          
 )
