@@ -27,8 +27,8 @@ import logging
 import uuid
 import os
 
-# Importamos nosso Agente Inteligente do nosso outro arquivo 
-from agente_noc import agente_noc
+# Importamos a função que cria nosso Agente Inteligente
+from agente_noc import get_agente_noc
 # Importamos a nossa ferramenta que realmente cadastra o host no Zabbix
 from zabbix_tools import executar_criacao_real
 
@@ -75,9 +75,12 @@ async def chat_endpoint(request: ChatRequest):
         
     pergunta = request.message
     try:
+        # Cria (ou recupera) uma instância exclusiva do Agente para esta sessão web
+        agente_noc = get_agente_noc(session_id=request.session_id)
+        
         # AQUI A MAGIA ACONTECE: Pegamos a pergunta e enviamos para a IA.
         # .run(pergunta) envia e aguarda ela responder (usando a Groq e o LLama 3)
-        resposta = agente_noc.run(pergunta, session_id=request.session_id)
+        resposta = agente_noc.run(pergunta)
         
         # Pega a "fala" escrita da resposta com redundância para casos de erro do Agno
         texto_resposta = ""

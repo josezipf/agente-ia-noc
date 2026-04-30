@@ -33,23 +33,26 @@ instrucoes = (
     "2. Se o usuário esquecer o IP ou pedir 'o mesmo IP', NÃO CHAME a ferramenta. Apenas pergunte qual é o IP exato."
 )
 
-# Configuração do Agente
-agente_noc = Agent(
-    model=Groq(id="llama-3.3-70b-versatile"),
-    description="Especialista em NOC",
-    instructions=instrucoes,
-    tools=[preparar_cadastro_host], 
-    db=SqliteDb(session_table="agent_sessions", db_file="agente_noc_memoria.db"),
-    add_history_to_context=True,
-    read_chat_history=True,
-    debug_mode=True,       
-    markdown=True          
-)
+# Configuração do Agente (Fábrica que cria o agente para cada sessão)
+def get_agente_noc(session_id=None):
+    return Agent(
+        model=Groq(id="llama-3.3-70b-versatile"),
+        description="Especialista em NOC",
+        instructions=instrucoes,
+        tools=[preparar_cadastro_host], 
+        db=SqliteDb(session_table="agent_sessions", db_file="agente_noc_memoria.db"),
+        session_id=session_id,
+        add_history_to_context=True,
+        debug_mode=True,       
+        markdown=True          
+    )
 
 def iniciar_chat_cli():
     print("="*70)
     print("🤖 Plataforma AIOps - Console NOC (Controller)")
     print("="*70)
+    
+    agente_noc = get_agente_noc() # Cria a sessão do terminal
     
     while True:
         try:
