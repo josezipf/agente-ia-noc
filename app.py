@@ -179,7 +179,7 @@ async def confirm_action(request: ConfirmRequest):
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
-# Bloco final que põe o servidor de pé na porta 8000
+# Bloco final que põe o servidor de pé na porta 5000
 if __name__ == "__main__":
     import uvicorn
     # reload=True ajuda quando você altera o arquivo Py, ele atualiza automaticamente
