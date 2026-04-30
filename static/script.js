@@ -8,6 +8,14 @@
 // Este evento funciona como um aviso: "Só inicie este Javascript quando TODO o HTML da tela estiver desenhado!"
 document.addEventListener('DOMContentLoaded', () => {
 
+    // -------------------- GERENCIAMENTO DE SESSÃO --------------------
+    // Cria ou recupera o ID da sessão para que o agente lembre da conversa
+    let sessionId = localStorage.getItem('agent_session_id');
+    if (!sessionId) {
+        sessionId = 'sess-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('agent_session_id', sessionId);
+    }
+
     // -------------------- PEGAR ELEMENTOS DO HTML (CAPTURAS) --------------------
     // Aqui damos um "apelido" no javascript para as partes do nosso design no HTML
     const chatForm = document.getElementById('chat-form');
@@ -85,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: messageText }) // Converte nosso texto num JSON para o Pythoon ler!
+                body: JSON.stringify({ message: messageText, session_id: sessionId }) // Converte nosso texto num JSON para o Pythoon ler!
             });
 
             // 5. PYTHON finalizou de ler a IA Groq! Tira a bolinha pulando!

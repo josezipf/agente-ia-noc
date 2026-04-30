@@ -44,6 +44,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Criamos uma regra: Quando um usuário mandar mensagem, DEVE ter um campo "message" que é string (texto)
 class ChatRequest(BaseModel):
     message: str
+    session_id: str | None = None
 
 # Criamos uma regra: Se o usuário clica em "APROVAR", precisa mandar o ID da operação, a ação e os dados
 class ConfirmRequest(BaseModel):
@@ -76,7 +77,7 @@ async def chat_endpoint(request: ChatRequest):
     try:
         # AQUI A MAGIA ACONTECE: Pegamos a pergunta e enviamos para a IA.
         # .run(pergunta) envia e aguarda ela responder (usando a Groq e o LLama 3)
-        resposta = agente_noc.run(pergunta)
+        resposta = agente_noc.run(pergunta, session_id=request.session_id)
         
         # Pega a "fala" escrita da resposta com redundância para casos de erro do Agno
         texto_resposta = ""
