@@ -195,23 +195,37 @@ def consultar_status_host(nome_host: str) -> str:
         mapa_disponibilidade = {"0": "Desconhecido", "1": "Disponível", "2": "Indisponível"}
         agente_status = mapa_disponibilidade.get(str(disponivel_cod), "Desconhecido")
         
-        # Buscar triggers em estado de problema para esse host
-        problemas = zapi.trigger.get(
+        # ---------------------------------------------------------------
+        # Zabbix 7+: usar problem.get que retorna APENAS problemas ativos.
+        # trigger.get com only_true=1 é a abordagem legada e imprecisa.
+        # ---------------------------------------------------------------
+        mapa_severidade = {
+            "0": "Info",
+            "1": "Baixa",
+            "2": "Média",
+            "3": "Alta",
+            "4": "Muito Alta",
+            "5": "Catastrófico"
+        }
+
+        problemas_raw = zapi.problem.get(
             hostids=host_id,
-            only_true=1,
-            skipDependent=1,
-            monitored=1,
-            active=1,
-            output=["description", "priority", "lastchange"]
+            output=["eventid", "name", "severity", "clock", "acknowledged"],
+            sortfield="eventid",
+            sortorder="DESC"
         )
-        
+
         lista_problemas = []
-        for p in problemas:
+        for p in problemas_raw:
+            import datetime
+            ts = datetime.datetime.fromtimestamp(int(p["clock"])).strftime("%d/%m/%Y %H:%M")
             lista_problemas.append({
-                "descricao": p["description"],
-                "prioridade": p["priority"]
+                "descricao": p.get("name", "Sem descrição"),
+                "severidade": mapa_severidade.get(p["severity"], p["severity"]),
+                "desde": ts,
+                "reconhecido": "Sim" if p["acknowledged"] == "1" else "Não"
             })
-            
+
         return json.dumps({
             "status": "success",
             "host": host["host"],
@@ -219,10 +233,10 @@ def consultar_status_host(nome_host: str) -> str:
             "monitoramento": status_monitoramento,
             "agente_disponivel": agente_status,
             "erro_agente": erro_agente,
-            "total_problemas": len(lista_problemas),
-            "problemas": lista_problemas
+            "total_problemas_ativos": len(lista_problemas),
+            "problemas_ativos": lista_problemas
         })
-        
+
     except requests.exceptions.Timeout:
          return json.dumps({"status": "error", "message": "O servidor Zabbix demorou muito para responder (Timeout)."})
     except requests.exceptions.ConnectionError:
