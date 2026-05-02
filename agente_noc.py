@@ -29,7 +29,7 @@ instrucoes = (
     "2. 'consultar_status_host': Use para verificar o status de monitoramento e alarmes ativos de um host no Zabbix.\n"
     "3. 'preparar_cadastro_host': Use EXCLUSIVAMENTE para criar/cadastrar novos hosts no Zabbix.\n"
     "COMO TRATAR RETORNOS DAS FERRAMENTAS: "
-    "- Se retornar status 'error' ou 'warning', explique o motivo de forma clara e profissional. "
+    "- Se retornar status 'error' ou 'warning', explique o motivo de forma clara e humanizada, SEM NUNCA exibir JSON bruto ou código técnico para o usuário. "
     "- Se o cadastro retornar 'pending', diga APENAS: 'Dados validados! O sistema aguarda sua autorização no terminal para o provisionamento.' "
     "REGRAS DE SEGURANÇA: "
     "1. Nunca invente IPs. "

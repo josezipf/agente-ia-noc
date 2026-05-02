@@ -88,8 +88,10 @@ def preparar_cadastro_host(nome_host: str, ip: str) -> str:
         })
     except requests.exceptions.Timeout:
          return json.dumps({"status": "error", "message": "O servidor Zabbix demorou muito para responder (Timeout)."})
+    except requests.exceptions.ConnectionError:
+         return json.dumps({"status": "error", "message": "O servidor Zabbix não está acessível no momento (Falha de Conexão)."})
     except Exception as e:
-        return json.dumps({"status": "error", "message": f"Falha de comunicação: {str(e)}"})
+        return json.dumps({"status": "error", "message": f"Erro interno ao validar dados: {str(e)}"})
 
 def executar_criacao_real(dados: dict) -> dict:
     try:
@@ -121,8 +123,10 @@ def executar_criacao_real(dados: dict) -> dict:
         }
     except requests.exceptions.Timeout:
          return {"status": "error", "message": "❌ Timeout na execução. O Zabbix não respondeu a tempo."}
+    except requests.exceptions.ConnectionError:
+         return {"status": "error", "message": "❌ Falha de conexão: O servidor Zabbix está inacessível ou offline."}
     except Exception as e:
-        return {"status": "error", "message": f"❌ Erro crítico ao gravar no Zabbix: {str(e)}"}
+        return {"status": "error", "message": f"❌ Erro ao gravar no Zabbix: Verifique os logs."}
 
 def executar_ping(ip_ou_host: str) -> str:
     """
@@ -212,5 +216,7 @@ def consultar_status_host(nome_host: str) -> str:
         
     except requests.exceptions.Timeout:
          return json.dumps({"status": "error", "message": "O servidor Zabbix demorou muito para responder (Timeout)."})
+    except requests.exceptions.ConnectionError:
+         return json.dumps({"status": "error", "message": "O servidor Zabbix não está acessível no momento (Falha de Conexão)."})
     except Exception as e:
-        return json.dumps({"status": "error", "message": f"Falha ao consultar Zabbix: {str(e)}"})
+        return json.dumps({"status": "error", "message": f"Erro interno ao consultar Zabbix. Tente novamente mais tarde."})
