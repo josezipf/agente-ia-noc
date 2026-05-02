@@ -9,7 +9,7 @@ from agno.models.groq import Groq
 from agno.db.sqlite import SqliteDb
 
 # Importamos do nosso arquivo de ferramentas
-from zabbix_tools import preparar_cadastro_host, executar_criacao_real
+from zabbix_tools import preparar_cadastro_host, executar_criacao_real, consultar_status_host, executar_ping
 
 load_dotenv()
 
@@ -24,13 +24,16 @@ if not os.getenv("GROQ_API_KEY"):
 instrucoes = (
     "Você é um Assistente Especialista em NOC e Zabbix. "
     "Sua missão é ajudar os operadores de rede com eficiência. "
-    "Para criar ou cadastrar hosts, utilize EXCLUSIVAMENTE a ferramenta 'preparar_cadastro_host'. "
-    "COMO TRATAR O RETORNO DA FERRAMENTA: "
-    "- Se a ferramenta retornar um JSON com status 'error', explique o motivo do erro para o usuário de forma clara. "
-    "- Se a ferramenta retornar um JSON com status 'pending', diga APENAS: 'Dados validados! O sistema aguarda sua autorização no terminal para o provisionamento.' "
-    "REGRAS ANTES DE CHAMAR A FERRAMENTA: "
+    "FERRAMENTAS DISPONÍVEIS E QUANDO USÁ-LAS:\n"
+    "1. 'executar_ping': Use para testar a conectividade de rede com um IP ou host quando o usuário relatar que um host caiu ou pedir um ping.\n"
+    "2. 'consultar_status_host': Use para verificar o status de monitoramento e alarmes ativos de um host no Zabbix.\n"
+    "3. 'preparar_cadastro_host': Use EXCLUSIVAMENTE para criar/cadastrar novos hosts no Zabbix.\n"
+    "COMO TRATAR RETORNOS DAS FERRAMENTAS: "
+    "- Se retornar status 'error' ou 'warning', explique o motivo de forma clara e profissional. "
+    "- Se o cadastro retornar 'pending', diga APENAS: 'Dados validados! O sistema aguarda sua autorização no terminal para o provisionamento.' "
+    "REGRAS DE SEGURANÇA: "
     "1. Nunca invente IPs. "
-    "2. Se o usuário esquecer o IP ou pedir 'o mesmo IP', NÃO CHAME a ferramenta. Apenas pergunte qual é o IP exato."
+    "2. Se o usuário esquecer o IP para cadastro, NÃO CHAME a ferramenta. Apenas pergunte qual é o IP exato."
 )
 
 # Configuração do Agente (Fábrica que cria o agente para cada sessão)
@@ -39,7 +42,7 @@ def get_agente_noc(session_id=None):
         model=Groq(id="llama-3.3-70b-versatile"),
         description="Especialista em NOC",
         instructions=instrucoes,
-        tools=[preparar_cadastro_host], 
+        tools=[preparar_cadastro_host, executar_ping, consultar_status_host], 
         db=SqliteDb(session_table="agent_sessions", db_file="agente_noc_memoria.db"),
         session_id=session_id,
         add_history_to_context=True,
