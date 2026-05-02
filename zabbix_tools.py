@@ -172,8 +172,9 @@ def consultar_status_host(nome_host: str) -> str:
         
         hosts = zapi.host.get(
             filter={"host": nome_host},
-            output=["hostid", "host", "status", "available", "error"],
-            selectInterfaces=["ip"]
+            output=["hostid", "host", "status"],
+            # No Zabbix 7+, disponibilidade do agente fica nas interfaces
+            selectInterfaces=["ip", "available", "error"]
         )
         
         if not hosts:
@@ -185,6 +186,14 @@ def consultar_status_host(nome_host: str) -> str:
         host = hosts[0]
         host_id = host["hostid"]
         status_monitoramento = "Ativo" if host["status"] == "0" else "Desativado"
+        
+        # Disponibilidade do agente vem da interface principal (Zabbix 7+)
+        interface = host["interfaces"][0] if host.get("interfaces") else {}
+        ip = interface.get("ip", "N/A")
+        disponivel_cod = interface.get("available", "0")
+        erro_agente = interface.get("error", "")
+        mapa_disponibilidade = {"0": "Desconhecido", "1": "Disponível", "2": "Indisponível"}
+        agente_status = mapa_disponibilidade.get(str(disponivel_cod), "Desconhecido")
         
         # Buscar triggers em estado de problema para esse host
         problemas = zapi.trigger.get(
@@ -206,10 +215,10 @@ def consultar_status_host(nome_host: str) -> str:
         return json.dumps({
             "status": "success",
             "host": host["host"],
-            "ip": host["interfaces"][0]["ip"] if host.get("interfaces") else "N/A",
+            "ip": ip,
             "monitoramento": status_monitoramento,
-            "agente_disponivel": host["available"],
-            "erro_agente": host["error"],
+            "agente_disponivel": agente_status,
+            "erro_agente": erro_agente,
             "total_problemas": len(lista_problemas),
             "problemas": lista_problemas
         })
